@@ -1,7 +1,6 @@
 package gonagios
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -44,7 +43,7 @@ func (client *Client) sendRequest(httpRequest *http.Request) ([]byte, error) {
 
 	defer response.Body.Close()
 
-	body, err := readAPIResponse(response.Body)
+	body, err := parseAPIResponse(response.Body)
 
 	if err != nil {
 		return nil, err
@@ -96,20 +95,20 @@ func addRequestHeaders(request *http.Request) {
 	return
 }
 
-func (client *Client) get(data *url.Values, resourceInfo interface{}, nagiosURL string) error {
-	request, err := http.NewRequest(http.MethodGet, nagiosURL, strings.NewReader(data.Encode()))
+func (client *Client) get(data, nagiosURL string) ([]byte, error) {
+	request, err := http.NewRequest(http.MethodGet, nagiosURL, strings.NewReader(data))
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	body, err := client.sendRequest(request)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return json.Unmarshal(body, resourceInfo)
+	return body, nil
 }
 
 func (client *Client) post(data *url.Values, nagiosURL string) ([]byte, error) {
