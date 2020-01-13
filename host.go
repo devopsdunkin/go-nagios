@@ -1,7 +1,9 @@
 package gonagios
 
 import (
+	"encoding/json"
 	"net/http"
+	"net/url"
 )
 
 var apiType = "config"
@@ -54,13 +56,13 @@ type Host struct {
 	FreeVariables              map[string]interface{} `json:"free_variables,omitempty"`
 }
 
-// NewHost creates a host object in Nagios
+// NewHost creates a host object in Nagios XI
 func (client *Client) NewHost(host *Host) ([]byte, error) {
-	url := client.buildURL(apiType, objectType, http.MethodPost)
+	nagiosURL := client.buildURL(apiType, objectType, http.MethodPost)
 
 	data := setURLParams(host)
 
-	body, err := client.post(data, url)
+	body, err := client.post(data, nagiosURL)
 
 	if err != nil {
 		return nil, err
@@ -77,25 +79,77 @@ func (client *Client) NewHost(host *Host) ([]byte, error) {
 
 // GetHost retrieves an existing host from Nagios
 func (client *Client) GetHost(name string) (*Host, error) {
-	var hostArray = []Host{} // TODO: Is there a better way to parse JSON without having to use an array of Host objects?
-	var host Host
+	var hostArray = []Host{}
 
-	url := client.buildURL(apiType, objectType, http.MethodGet)
+	nagiosURL := client.buildURL(apiType, objectType, http.MethodGet)
 
 	data := &url.Values{}
 	data.Set("host_name", name)
 
-	body, err := client.get(data.Encode(), )
+	body, err := client.get(data.Encode(), nagiosURL)
 
-	return nil, nil
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(body, &hostArray)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// We should always return one host object, so we can assign host the value of the first host object in the array
+	host := hostArray[0]
+
+	err = json.Unmarshal(body, &host.FreeVariables)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &host, nil
 }
 
 // UpdateHost updates attributes of an existing host in Nagios
-func UpdateHost() {
-	return
+func (client *Client) UpdateHost(host *Host, currentValue interface{}) error {
+	nagiosURL := client.buildURL(apiType, objectType, http.MethodPut, host.HostName)
+
+	nagiosURL = nagiosURL + setURLParams(host).Encode()
+
+	_, err := client.put(nagiosURL)
+
+	if err != nil {
+		return err
+	}
+
+	// Apply config and restart Nagios core
+	err = client.applyConfig()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // DeleteHost deletes a host from Nagios
-func DeleteHost() {
-	return
+func (client *Client) DeleteHost(name string) ([]byte, error) {
+	nagiosURL := client.buildURL(apiType, objectType, http.MethodDelete, name)
+
+	data := &url.Values{}
+	data.Set("host_name", name)
+
+	body, err := client.delete(data, nagiosURL)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = client.applyConfig()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
 }
