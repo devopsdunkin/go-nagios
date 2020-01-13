@@ -19,7 +19,7 @@ type ResponseCode struct {
 // Nagios does not return errors in a way that golang will catch them in the err variable
 // We need to enhance the io.ReadAll function with determing if Nagios returns a response of
 // 'success' or 'error'
-func readAPIResponse(reader io.Reader) ([]byte, error) {
+func parseAPIResponse(reader io.Reader) ([]byte, error) {
 	var errorCode error
 	body, _ := ioutil.ReadAll(reader)
 
