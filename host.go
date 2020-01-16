@@ -83,9 +83,15 @@ func (client *Client) GetHost(name string) (*Host, error) {
 
 	nagiosURL := client.buildURL(apiType, objectType, http.MethodGet)
 
+	// Iniitialize but we aren't setting anything since htis is a HTTP GET
+	// It's here solely to satisfy passing this in the get() function
 	data := &url.Values{}
-	data.Set("host_name", name)
 
+	// Append '&host_name=' and the name var to the end of the URL
+	// Nagios will return all hosts unless we pass a URL query parameter filtering the results
+	nagiosURL = nagiosURL + "&host_name=" + name
+
+	// Execute the query against Nagios
 	body, err := client.get(data.Encode(), nagiosURL)
 
 	if err != nil {
@@ -101,18 +107,16 @@ func (client *Client) GetHost(name string) (*Host, error) {
 	// We should always return one host object, so we can assign host the value of the first host object in the array
 	host := hostArray[0]
 
-	err = json.Unmarshal(body, &host.FreeVariables)
-
-	if err != nil {
-		return nil, err
-	}
+	// We intentionally do not capture the error returned here. FreeVariables is an optional field so if it's not set
+	// This will return an error if it's nil.
+	json.Unmarshal(body, &host.FreeVariables)
 
 	return &host, nil
 }
 
 // UpdateHost updates attributes of an existing host in Nagios
 func (client *Client) UpdateHost(host *Host, currentValue interface{}) error {
-	nagiosURL := client.buildURL(apiType, objectType, http.MethodPut, host.HostName)
+	nagiosURL := client.buildURL(apiType, objectType, http.MethodPut, currentValue.(string))
 
 	nagiosURL = nagiosURL + setURLParams(host).Encode()
 
