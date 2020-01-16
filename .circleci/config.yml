@@ -4,6 +4,7 @@ jobs:
     docker:
       # specify the version
       - image: circleci/golang:1.12.6
+      - image: devopsdunkin/nagiosxi:ci-tests
 
     working_directory: /go/src/github.com/devopsdunkin/gonagios
     steps:
