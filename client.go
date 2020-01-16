@@ -1,6 +1,7 @@
 package gonagios
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -44,7 +45,15 @@ func (client *Client) sendRequest(httpRequest *http.Request) ([]byte, error) {
 
 	defer response.Body.Close()
 
-	body, err := parseAPIResponse(response.Body)
+	var body []byte
+
+	// Nagios returns data in the body during a HTTP GET and we need to unmarshal that data to its respective struct downstream
+	// If we are doing a POST, PUT or DELETE, Nagios will return a 'success' or 'error' status code, so we want to capture the message
+	if httpRequest.Method == http.MethodGet {
+		body, err = ioutil.ReadAll(response.Body)
+	} else {
+		body, err = parseAPIResponse(response.Body)
+	}
 
 	if err != nil {
 		return nil, err
