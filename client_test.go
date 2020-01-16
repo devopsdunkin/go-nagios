@@ -19,7 +19,11 @@ func TestNewClient(t *testing.T) {
 	apiType := "system"
 	objectType := "info"
 
-	envVarCheck(t)
+	errList := envVarCheck()
+
+	if errList != nil {
+		t.Fatal(errList)
+	}
 
 	client := NewClient(os.Getenv("NAGIOS_URL"), os.Getenv("API_TOKEN"))
 
@@ -42,7 +46,7 @@ func TestNewClient(t *testing.T) {
 	assert.Equal(t, "nagiosxi", response.Product)
 }
 
-func envVarCheck(t *testing.T) {
+func envVarCheck() []string {
 	var errList []string
 	for _, variable := range requiredEnvVars {
 		if os.Getenv(variable) == "" {
@@ -51,7 +55,5 @@ func envVarCheck(t *testing.T) {
 		}
 	}
 
-	if errList != nil {
-		t.Fatal(errList)
-	}
+	return errList
 }
