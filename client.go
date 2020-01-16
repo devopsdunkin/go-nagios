@@ -31,6 +31,7 @@ func NewClient(url, token string) *Client {
 	return nagiosClient
 }
 
+// sendRequest executes a HTTP request to the API endpoint
 func (client *Client) sendRequest(httpRequest *http.Request) ([]byte, error) {
 	addRequestHeaders(httpRequest)
 
@@ -88,6 +89,7 @@ func (client *Client) buildURL(apiType, objectType, methodType string, objectInf
 	return nagiosURL.String()
 }
 
+// addRequestHeaders adds the required headers to the HTTP request
 func addRequestHeaders(request *http.Request) {
 	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	request.Header.Add("Accept", "/")
@@ -95,6 +97,7 @@ func addRequestHeaders(request *http.Request) {
 	return
 }
 
+// get executes a HTTP GET against the API endpoint
 func (client *Client) get(data, nagiosURL string) ([]byte, error) {
 	request, err := http.NewRequest(http.MethodGet, nagiosURL, strings.NewReader(data))
 
@@ -111,6 +114,7 @@ func (client *Client) get(data, nagiosURL string) ([]byte, error) {
 	return body, nil
 }
 
+// post executes a HTTP POST against the API endpoint
 func (client *Client) post(data *url.Values, nagiosURL string) ([]byte, error) {
 	request, err := http.NewRequest(http.MethodPost, nagiosURL, strings.NewReader(data.Encode()))
 
@@ -127,6 +131,7 @@ func (client *Client) post(data *url.Values, nagiosURL string) ([]byte, error) {
 	return body, nil
 }
 
+// put executes a HTTP PUT against the API endpoint
 func (client *Client) put(nagiosURL string) ([]byte, error) {
 	if strings.Contains(nagiosURL, " ") {
 		nagiosURL = strings.Replace(nagiosURL, " ", "%20", -1)
@@ -146,6 +151,7 @@ func (client *Client) put(nagiosURL string) ([]byte, error) {
 	return body, nil
 }
 
+// delete executes a HTTP DELETE against the API endpoint
 func (client *Client) delete(data *url.Values, nagiosURL string) ([]byte, error) {
 	request, err := http.NewRequest(http.MethodDelete, nagiosURL, strings.NewReader(data.Encode()))
 
@@ -162,6 +168,7 @@ func (client *Client) delete(data *url.Values, nagiosURL string) ([]byte, error)
 	return body, nil
 }
 
+// applyConfig restarts the Nagios core engine and applies the latest changes to the configuration
 func (client *Client) applyConfig() error {
 	nagiosURL := client.buildURL("system", "applyconfig", http.MethodPost)
 
@@ -176,8 +183,7 @@ func (client *Client) applyConfig() error {
 	return nil
 }
 
-// Function maps the elements of a string array to a single string with each value separated by commas
-// Nagios expects a list of values supplied in this format via URL encoding
+// mapArrayToString maps the elements of a string array to a single string with each value separated by commas
 func mapArrayToString(sourceArray []interface{}) string {
 	var destString strings.Builder
 
@@ -194,7 +200,8 @@ func mapArrayToString(sourceArray []interface{}) string {
 	return destString.String()
 }
 
-// Function takes any boolean value, converts to integer and returns in string format
+// convertBoolToIntToString takes any boolean value, converts to integer and returns in string format
+// Nagios uses integer values of 0 and 1 to set if an attribute is enabled or not
 func convertBoolToIntToString(sourceVal bool) string {
 	if sourceVal {
 		return "1"
