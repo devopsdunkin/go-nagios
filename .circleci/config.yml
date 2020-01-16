@@ -1,15 +1,20 @@
 version: 2
 jobs:
-  build:
+  test:
     docker:
-      # specify the version
       - image: circleci/golang:1.12.6
       - image: devopsdunkin/nagiosxi:ci-tests
 
     working_directory: /go/src/github.com/devopsdunkin/gonagios
     steps:
       - checkout
-
-      # specify any bash command here prefixed with `run: `
-      - run: go get -v -t -d ./...
-      - run: go test -v ./...
+      - run: go mod download
+      - save_cache:
+          key: go-cache-{{ checksum "go.sum" }}
+          paths:
+            - /go/pkg
+      - run:
+          command: |
+            go test -v
+    environment:
+      GO111MODULE: "on"
